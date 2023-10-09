@@ -5,8 +5,11 @@ from tkinter import ttk
 from tkinter import *
 import inspect
 from os import path
+import pandas as pd
+import shutil
 
 from rw_xml import import_xml_settings
+from data4gis import binding_debts
 
 #-----finding the path of the current script-file------------
 script_name = inspect.getframeinfo(inspect.currentframe()).filename
@@ -14,25 +17,99 @@ path_script = path.dirname(path.abspath(script_name))
 setting_filename = f"{path_script}\settings.xml"
 file_parameters = ""
 settings_set = {}
+gis_data = pd.DataFrame()
+current_bd_set = []
 #--------------------------funcs-------------------------------
 def get_settings_set(filename):
+    '''
+    Функция запускает функцию импорта словаря с данными для строк подключений, 
+    по переданному адресу файла
+    Результат возвращаем в виде dictionary. 
+    Arguments:
+        filename [str]: адрес файла с данными подключений
+    Returns:
+        [Dictionary]: результирующий словарь
+    '''
     global settings_set
     settings_set = import_xml_settings(filename)
     
 def get_current_bd_set(jur_label):
+    '''
+    Функция выбирает данные для строки подключения, 
+    по переданному идентификатору юридического лица
+    Результат возвращаем в виде dictionary. 
+    Arguments:
+        jur_label [str]: идентификатор юр. лица (УК)
+    Returns:
+        [list]: результирующий список
+    '''
     global settings_set, current_bd_set
     current_bd_set = settings_set.get(jur_label, []).copy()
     return current_bd_set
 
 def no_params():
+    '''
+    Функция производит проверку на наличие уже выбранных
+    данных юр.лица для подключения к БД. 
+    Arguments:
+    Returns:
+        [Boolean]: True/Существуют данные (False/Отсутствуют данные)
+    '''
     #print(current_bd_set)
     if not current_bd_set:
         return True
     else: 
         return False
+
+def read_gis_file(file):
+    '''
+    Функция читает данные из файла
+    в датафрейм и присвивает его глобальной
+    переменной gis_data
+    Arguments:
+        file [str]: имя excel-файла
+    Returns:
+        None
+    '''
+    global gis_data
+    gis_data = pd.read_excel(file, sheet_name=0)
+    lbl_info_debts.config(text="Данные шаблона получены")
+    btn_debts_start.config(state="normal")
     
+
+def insert_data(df, file_name, sheetname="Ответы на запросы"):
+    ##---sheetname = "Закрытие лицевых счётов" по умолчанию
+    ##-- Сhecking for the presence of a file
+    res_dir = path.normpath(path.expanduser("~/Desktop")) 
+    res_file_name = f"\{current_bd_set[1]}__result"
+    res_ext = ".xlsx"
+    file_name2 = res_dir + res_file_name + res_ext
+    number = 1
+    while path.exists(file_name2):
+        number += 1
+        file_name2 = f"{res_dir}{res_file_name}_{number}{res_ext}"
+    shutil.copyfile(file_name, file_name2)
+    # вариант записи данных в excel-файл
+    '''wb = ox.load_workbook(new_file_name)
+    for ir in range(0, len(df)):
+        for ic in range(0, len(df.iloc[ir])):
+            wb[sheetname].cell(2 + ir, 1 + ic).value = df.iloc[ir][ic]
+    wb.save(new_file_name)'''
+    with pd.ExcelWriter(path = file_name2, mode="a", engine="openpyxl", if_sheet_exists="overlay") as writer:
+        df.to_excel(writer, sheet_name="Ответы на запросы", startrow=2, index= False, header= False )
+
+#--------------------------------------------------------------        
 #--------------------------funcs4events------------------------
 def import_params():
+    '''
+    Функция-обработчик для импорта данных настроек коннектов к БД. 
+    Получает имя  файла и передает его в функцию,
+    на выходе которой будет словарь с данными для коннектов
+    Настраивает интерфейс для последующих действий по выбору
+    юрлица с котором будет вестись работа.
+    Returns:
+        None
+    '''
     global setting_filename
     
     # После нажатия кнопки Импортировать       
@@ -41,33 +118,77 @@ def import_params():
     file_parameters = file
     # get global settings_set
     get_settings_set(file_parameters)
-    combo.config(values=list(settings_set.keys())[::-1])
-    combo_close_ls.config(values=list(settings_set.keys())[::-1])
-    combo_main.config(values=list(settings_set.keys())[::-1])
-    shutil.copyfile(file, setting_filename)
-
+    combo_MC.config(values=list(settings_set.keys())[::-1])
+    lbl_setting_info.config(text="Выберите организацию", fg="blue")
 
 def save_set():
+    '''
+    Функция-обработчик сохраняет введенные данные
+    пользователем 
+    через добавление в файл предварительных настроек. 
+    Arguments:
+    Returns:
+    '''
     pass
 
 
 def select_jur(event):
-    
+    '''
+    Функция-обработчик получает название юр.лица
+    и передает функцию для поиска и получения текущих рабочих
+    настроек для текущего коннекта.
+    Настраивает интерфейс для последующих действий пользователя.
+    Returns:
+        None
+    '''
     if combo_MC.get():
         get_current_bd_set(combo_MC.get())
         if not no_params():
-            btn_open.config(state="normal")
-            lbl_info.config(text= f"{current_bd_set}\
-                \n Загрузите файл шаблона с номерами ЕЛС")
-            btn_load_close_ls.config(state="normal")
-            lbl_info_close_ls.config(text= f"{current_bd_set}\
-                \n Загрузите файл шаблона для экспорта закрытых ЛС")
-            btn_kadastr_open.config(state="normal")
-            lbl_info_kadastr.config(text = f"{current_bd_set}\
-                \n Загрузите файл шаблона с объектами ЖФ")
-            btn_kvitirovanie_open.config(state="normal")
-            lbl_info_kvitirovanie.config(text = f"{current_bd_set}\
+            btn_debts_open.config(state="normal")
+            lbl_info_debts.config(text = f"{current_bd_set}\
                 \n Загрузите файл шаблона Извещения о принятии к исполнению распоряжений")
+            
+def get_gis_data():
+    '''
+    Функция-обработчик запускает функцию
+    получения рабочего датасета из excel-файла,
+    указанного в окне-диалоге. 
+    Arguments:
+    Returns:
+        None
+    '''
+    # Чтение шаблона с ЕЛС после нажатия Открыть
+    file = filedialog.askopenfilename(filetypes = (("xlsx files","*.xlsx"),("all files","*.*")))
+    global filename
+    filename = file
+    read_gis_file(file)  
+    
+    
+def start_debts_procedure():
+    '''
+    Функция-обработчик запускает функцию binding_debts
+    получения результирующего датафрейма с данными по должникам.
+    Запись результата в excel-файл. 
+    Arguments:
+    Returns:
+        None
+    '''
+    #pass
+    df_result = binding_debts(gis_data, current_bd_set[0], current_bd_set[1], current_bd_set[2], current_bd_set[3])
+    #res_dir = path.dirname(filename) 
+    # разбиение имени файла для провеки на уже существующий файл
+    # с таким же именем
+    #res_file_name = f"\{current_bd_set[1]}_result"
+    #res_ext = ".xlsx"
+    #res_file = res_dir + res_file_name + res_ext
+    #number = 1
+    #while path.exists(res_file):
+    #    number += 1
+    #    res_file = f"{res_dir}{res_file_name}_{number}{res_ext}"
+        
+    #df_result.to_excel(res_file, sheet_name='Квитирование - Результат')
+    insert_data(df_result, filename)
+    lbl_info_debts.config(text="Обработка данных закончена! \n Результат: ")    
 #-----------------------------------------------------------
 
 
@@ -143,6 +264,32 @@ combo_MC = Combobox(tab_settings, state="readonly")
 combo_MC.grid(row=10, column=0, columnspan=3)  
 combo_MC.bind("<<ComboboxSelected>>", select_jur)
 
+#-------------------------- tab 2 (debts)----------------------
+#--------------------------------------------------------------
+lbl_debts_form = Label(tab_debts, text="Загрузите Извещения о принятии к исполнению распоряжений", 
+                       font=("Arial Bold", 10))
+lbl_debts_form.grid(row=0, column=0, columnspan=2)
+
+btn_debts_open = Button(tab_debts, text="Открыть", bg="white", fg="black", command=get_gis_data)
+btn_debts_open.grid(row=1, column=0, columnspan=3)
+if not no_params():
+    btn_debts_open.config(state="normal")
+else:
+    btn_debts_open.config(state="disabled")
+
+lbl_info_debts = Label(tab_debts, font=("Arial Bold", 10), fg="green")
+lbl_info_debts.grid(row=3, column=0, columnspan=3)
+
+btn_debts_start = Button(tab_debts, text="Запуск", bg="white", fg="black", command=start_debts_procedure)
+btn_debts_start.grid(row=5, column=0, columnspan=3)
+if not no_params() and gis_data:
+    btn_debts_start.config(state="normal")
+else:
+    btn_debts_start.config(state="disabled")
+    
+
+if no_params():
+    lbl_info_debts.config(text="Настройте соединение с БД организации \n затем выберите нужную организацию")
 #--------------------------------------------------------------
 
 window.mainloop()

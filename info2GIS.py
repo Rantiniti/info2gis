@@ -17,7 +17,7 @@ path_script = path.dirname(path.abspath(script_name))
 setting_filename = f"{path_script}\settings.xml"
 file_parameters = ""
 settings_set = {}
-gis_data = pd.DataFrame()
+gis_data = {}
 current_bd_set = []
 #--------------------------funcs-------------------------------
 def get_settings_set(filename):
@@ -72,13 +72,13 @@ def read_gis_file(file):
         None
     '''
     global gis_data
-    gis_data = pd.read_excel(file, sheet_name=0)
+    gis_data = pd.read_excel(file, sheet_name=[0, 1])
     lbl_info_debts.config(text="Данные шаблона получены")
     btn_debts_start.config(state="normal")
     
 
 def insert_data(df, file_name, sheetname="Ответы на запросы"):
-    ##---sheetname = "Закрытие лицевых счётов" по умолчанию
+    ##---sheetname = "Ответы на запросы" по умолчанию
     ##-- Сhecking for the presence of a file
     res_dir = path.normpath(path.expanduser("~/Desktop")) 
     res_file_name = f"\{current_bd_set[1]}__result"

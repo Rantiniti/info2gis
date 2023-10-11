@@ -93,7 +93,8 @@ def binding_debts(data, server, database, username, password, driver='ODBC Drive
         server, database, username, password, driver: 
                         данные для строки подключения к БД АИС ЖКХ
     Returns:
-        None
+        Dataframe: датафрейм подбитый для заливки шаблона 
+        с послеюдущим экспортом данных по должникам в ГИС ЖКХ
     '''
     
     connection_uri = sa.engine.URL.create(
@@ -111,10 +112,12 @@ def binding_debts(data, server, database, username, password, driver='ODBC Drive
     df = get_sql_query(query_ais_debts(), engine)
     df = column2str(df)
     
+    
     # объединяем датафреймы из словаря в один с опорными признаками
     gis_df = pd.merge(data[0], data[1], how='inner', on=['№ запроса'])[[
         'Идентификатор адреса', 'Номер квартиры, комнаты, блока жилого дома',
-        'Идентификатор запроса в ГИС ЖКХ']]
+        '№ запроса', 'Идентификатор запроса в ГИС ЖКХ']]
+    
     
     # убираем префикс "кв. "
     gis_df['Номер квартиры, комнаты, блока жилого дома'] = gis_df['Номер квартиры, комнаты, блока жилого дома'].apply(
@@ -124,5 +127,8 @@ def binding_debts(data, server, database, username, password, driver='ODBC Drive
     result_df = pd.merge(gis_df, df, how='left', 
                          left_on = ['Идентификатор адреса', 'Номер квартиры, комнаты, блока жилого дома'],
                          right_on=['fias', 'appart'])
+ 
+    result_df['подтверждено'] = result_df['number'].apply(lambda x: 'нет' if(pd.isna(x)) else 'да')
+    result_df = result_df[['№ запроса', 'Идентификатор запроса в ГИС ЖКХ', 'подтверждено', 'lastdName', 'firstName', 'secondName']]
     
-    pass
+    return result_df

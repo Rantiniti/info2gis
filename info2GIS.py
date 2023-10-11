@@ -291,5 +291,9 @@ else:
 if no_params():
     lbl_info_debts.config(text="Настройте соединение с БД организации \n затем выберите нужную организацию")
 #--------------------------------------------------------------
-
+if path.exists(setting_filename):
+        get_settings_set(setting_filename)
+        combo_MC.config(values=list(settings_set.keys())[::-1])
+        lbl_setting_info.config(text="Выберите организацию!", fg="blue")
+        
 window.mainloop()

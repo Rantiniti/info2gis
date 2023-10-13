@@ -28,5 +28,8 @@ def import_xml_settings(filename):
         settings_set[label] = [server, bd, login, password]
     
     fd.close()
+    
     return settings_set
+
+# добавить функцию добавление тэга в xml-файл
 

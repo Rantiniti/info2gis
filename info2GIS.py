@@ -121,15 +121,47 @@ def import_params():
     combo_MC.config(values=list(settings_set.keys())[::-1])
     lbl_setting_info.config(text="Выберите организацию", fg="blue")
 
+def add_param():
+    '''
+    Функция-обработчик открывает поля
+    для ввода данных по коннекту пользователю 
+    Arguments []:
+    Returns:
+    '''
+    txt_lable.config(state=NORMAL)
+    txt_srv.config(state=NORMAL)
+    txt_bd.config(state=NORMAL)
+    txt_usr.config(state=NORMAL)
+    txt_pass.config(state=NORMAL)
+    
+    btn_saving.config(state="normal")
+    pass
+
+
 def save_set():
     '''
     Функция-обработчик сохраняет введенные данные
     пользователем 
     через добавление в файл предварительных настроек. 
-    Arguments:
+    Arguments []:
     Returns:
     '''
-    pass
+    global settings_set
+    
+    list_connect_params = [txt_lable.get(), txt_srv.get(),
+                           txt_bd.get(), txt_usr.get(), txt_pass.get()]
+    
+    
+    if "" in list_connect_params:
+        return 
+    
+    settings_set[list_connect_params[0]] = [list_connect_params[1], list_connect_params[2], 
+                                       list_connect_params[3], list_connect_params[4]]
+    
+    # сюда нужно добавить вызов функции, которая допишет файл settings если он есть
+    # либо создаст и добавить туда введнную настройку
+    
+    #pass
 
 
 def select_jur(event):
@@ -227,35 +259,43 @@ btn_import_params.grid(row = 0, column = 2)
 
 lbl_add = Label(tab_settings, text="Добавление данных для подключения к БД")
 lbl_add.grid(row = 1, column=0, rowspan=2, columnspan=3, sticky=NSEW)
+btn_add_setting = Button(tab_settings, text="Добавить", command=add_param)
+btn_add_setting.grid(row=1, column=2)
+
 
 lbl_lable = Label(tab_settings, text="Наименование:")
 lbl_lable.grid(row=3, column=0, padx=5, pady=5)
 txt_lable = Entry(tab_settings, width=22)
+txt_lable.config(state=DISABLED)
 txt_lable.grid(row=3, column=1, columnspan=2, padx=5, pady=5)
 
 lbl_srv = Label(tab_settings, text="Сервер:")
 lbl_srv.grid(row=4, column=0, padx=5, pady=5)
 txt_srv = Entry(tab_settings, width=22)
+txt_srv.config(state=DISABLED)
 txt_srv.grid(row=4, column=1, columnspan=2, padx=5, pady=5)
 
 lbl_bd = Label(tab_settings, text="База:")
 lbl_bd.grid(row=5, column=0, padx=5, pady=5)
 txt_bd = Entry(tab_settings, width=22)
+txt_bd.config(state=DISABLED)
 txt_bd.grid(row=5, column=1, columnspan=2, padx=5, pady=5)
 
 lbl_usr = Label(tab_settings, text="Пользователь:")
 lbl_usr.grid(row=6, column=0, padx=5, pady=5)
 txt_usr = Entry(tab_settings, width=22)
+txt_usr.config(state=DISABLED)
 txt_usr.grid(row=6, column=1, columnspan=2, padx=5, pady=5)
 
 lbl_pass = Label(tab_settings, text="Пароль:")
 lbl_pass.grid(row=7, column=0, padx=5, pady=5)
 txt_pass = Entry(tab_settings, width=22)
+txt_pass.config(state=DISABLED)
 txt_pass.grid(row=7, column=1, columnspan=2, padx=5, pady=5)
-
 btn_saving = Button(tab_settings, text="Сохранить", command=save_set)
 btn_saving.grid(row=8, column=1)
 btn_saving.config(state="disabled")
+
 
 lbl_setting_info = Label(tab_settings, text = "отсутствует статус настроек", font=("Arial Bold", 10), fg="red")
 lbl_setting_info.grid(row=9, column=0, columnspan=3)
@@ -263,6 +303,10 @@ lbl_setting_info.grid(row=9, column=0, columnspan=3)
 combo_MC = Combobox(tab_settings, state="readonly")
 combo_MC.grid(row=10, column=0, columnspan=3)  
 combo_MC.bind("<<ComboboxSelected>>", select_jur)
+
+#list4addBD = [txt_lable, txt_srv, txt_bd, txt_usr, txt_pass]
+
+
 
 #-------------------------- tab 2 (debts)----------------------
 #--------------------------------------------------------------
@@ -291,9 +335,11 @@ else:
 if no_params():
     lbl_info_debts.config(text="Настройте соединение с БД организации \n затем выберите нужную организацию")
 #--------------------------------------------------------------
+# если есть файл с настройками в рабочем каталоге, чиаем и привязываем данные
 if path.exists(setting_filename):
         get_settings_set(setting_filename)
         combo_MC.config(values=list(settings_set.keys())[::-1])
         lbl_setting_info.config(text="Выберите организацию!", fg="blue")
-        
+
+
 window.mainloop()

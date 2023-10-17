@@ -1,0 +1,33 @@
+with jud as ( 
+                select  
+                e.id_efls [efls],  
+                max(ej.date_end) [date_judge]  
+                from EFls_judge ej  
+                join Efls e on e.id_efls = ej.id_efls  
+                where getdate() between e.date_beg and e.date_end  
+                and ej.is_full_payed is null  
+                and ej.date_verdict is not null  
+                and (ej.id_type_efls_judge_mark <> 1 or ej.id_type_efls_judge_mark is null)  
+                group by e.id_efls) 
+            select  
+            e.number,   
+            a.name [appart],  
+            dbo.fn_people_full_name(pg.id_people) [fio],  
+            (select fname from People where id_people = pg.id_people) [lastdName],  
+            isnull ((select mname from People where id_people = pg.id_people), '-') [firstName],  
+            isnull ((select lname from People where id_people = pg.id_people), '-') [secondName],  
+            aa.value [fias],  
+            dbo.fn_addr_full_name(h.id_addr) [address]  
+            from Efls e 
+            join Addr a on a.id_addr = e.id_addr_appart  
+            join Addr h on h.id_addr = a.id_addr_up  
+            join Addr_attr aa on aa.id_addr = h.id_addr  
+            join Addr_appart_type at on at.id_addr_appart = a.id_addr  
+            join Type_addr_appart ta on ta.id_type_addr_appart = at.id_type_addr_appart   
+            join vi_People_gen pg on pg.id_efls = e.id_efls  
+            join jud j on j.efls = e.id_efls  
+            where aa.id_attr = 1001  
+            and getdate() between pg.date_beg and pg.date_end  
+            and getdate() between e.date_beg and e.date_end  
+            and at.id_type_addr_appart <> 4  
+            order by dbo.fn_addr_element(dbo.fn_addr_full_name(a.id_addr)) 

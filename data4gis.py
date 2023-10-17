@@ -5,6 +5,8 @@ from sqlalchemy.sql import text, select, and_, or_, asc, desc, between
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 from sqlalchemy.sql.expression import update
 import numpy as np
+import inspect
+from os import path
 
 ###-----------------------------------------------------------------------
 
@@ -32,39 +34,15 @@ def query_ais_debts():
     Returns:
         str: sql запрос данных по должникам в БД "АИС ЖКХ"
     '''
-    return f"with jud as ( "\
-                f"select  "\
-                f"e.id_efls [efls],  "\
-                f"max(ej.date_end) [date_judge]  "\
-                f"from EFls_judge ej  "\
-                f"join Efls e on e.id_efls = ej.id_efls  "\
-                f"where getdate() between e.date_beg and e.date_end  "\
-                f"and ej.is_full_payed is null  "\
-                f"and ej.date_verdict is not null  "\
-                f"and (ej.id_type_efls_judge_mark <> 1 or ej.id_type_efls_judge_mark is null)  "\
-                f"group by e.id_efls) "\
-            f"select  "\
-            f"e.number,   "\
-            f"a.name [appart],  "\
-            f"dbo.fn_people_full_name(pg.id_people) [fio],  "\
-            f"(select fname from People where id_people = pg.id_people) [lastdName],  "\
-            f"isnull ((select mname from People where id_people = pg.id_people), '-') [firstName],  "\
-            f"isnull ((select lname from People where id_people = pg.id_people), '-') [secondName],  "\
-            f"aa.value [fias],  "\
-            f"dbo.fn_addr_full_name(h.id_addr) [address]  "\
-            f"from Efls e "\
-            f"join Addr a on a.id_addr = e.id_addr_appart  "\
-            f"join Addr h on h.id_addr = a.id_addr_up  "\
-            f"join Addr_attr aa on aa.id_addr = h.id_addr  "\
-            f"join Addr_appart_type at on at.id_addr_appart = a.id_addr  "\
-            f"join Type_addr_appart ta on ta.id_type_addr_appart = at.id_type_addr_appart   "\
-            f"join vi_People_gen pg on pg.id_efls = e.id_efls  "\
-            f"join jud j on j.efls = e.id_efls  "\
-            f"where aa.id_attr = 1001  "\
-            f"and getdate() between pg.date_beg and pg.date_end  "\
-            f"and getdate() between e.date_beg and e.date_end  "\
-            f"and at.id_type_addr_appart <> 4  "\
-            f"order by dbo.fn_addr_element(dbo.fn_addr_full_name(a.id_addr)) "
+    #-----finding the path of the current script-file------------
+    script_name = inspect.getframeinfo(inspect.currentframe()).filename
+    path_script = path.dirname(path.abspath(script_name))
+    query_file= f"{path_script}\query_debts.txt"
+    
+    with open(query_file) as q:
+        sql_text = q.read()
+    
+    return sql_text
 
 
 def column2str(df):

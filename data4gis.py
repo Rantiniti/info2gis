@@ -88,14 +88,20 @@ def binding_debts(data, server, database, username, password, driver='ODBC Drive
     meta = MetaData()
     
     df = get_sql_query(query_ais_debts(), engine)
-    df = column2str(df)
     
+    # если должников в АИС ЖКХ нет,
+    # то выдаем результирующий датасет с отсутствием долгов
+    if df.empty:
+        result_df = data[1][['№ запроса', 'Идентификатор запроса в ГИС ЖКХ']]
+        result_df['подтверждено'] = 'нет'
+        return result_df
+    
+    df = column2str(df)
     
     # объединяем датафреймы из словаря в один с опорными признаками
     gis_df = pd.merge(data[0], data[1], how='inner', on=['№ запроса'])[[
         'Идентификатор адреса', 'Номер квартиры, комнаты, блока жилого дома',
         '№ запроса', 'Идентификатор запроса в ГИС ЖКХ']]
-    
     
     # убираем префикс "кв. "
     gis_df['Номер квартиры, комнаты, блока жилого дома'] = gis_df['Номер квартиры, комнаты, блока жилого дома'].apply(
@@ -105,7 +111,14 @@ def binding_debts(data, server, database, username, password, driver='ODBC Drive
     result_df = pd.merge(gis_df, df, how='left', 
                          left_on = ['Идентификатор адреса', 'Номер квартиры, комнаты, блока жилого дома'],
                          right_on=['fias', 'appart'])
- 
+    
+    # если среди запросов с соцзащиты нет должников в данных аис
+    # возвращаем датасет с инфой об отсутствии долгов
+    if result_df.empty:
+        result_df['подтверждено'] = 'нет'
+        return result_df[['№ запроса', 'Идентификатор запроса в ГИС ЖКХ', 'подтверждено']]
+    
+    # формируем датасет с учетом найденных должников
     result_df['подтверждено'] = result_df['number'].apply(lambda x: 'нет' if(pd.isna(x)) else 'да')
     result_df = result_df[['№ запроса', 'Идентификатор запроса в ГИС ЖКХ', 'подтверждено', 'lastdName', 'firstName', 'secondName']]
     

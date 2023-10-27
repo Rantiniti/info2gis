@@ -33,3 +33,42 @@ def import_xml_settings(filename):
 
 # добавить функцию добавление тэга в xml-файл
 
+def export_xml_setting(filename, s_set, name):
+    '''
+    Функция записывает в xml-файл данные конект-строки.
+    Цель - экспорт данных, введенных вручную,
+    по подключению к базе.
+    Arguments:
+        filename [str]: адрес файла с данными подключений
+        s_set [dict]: данные для коннекта с БД
+        name [str]: название набора данных для коннекта
+    Returns:
+        None
+    '''
+    s_set = dict(s_set)
+    
+    label = base64.b64encode(bytes(name, 'utf-8')).decode()
+    server = base64.b64encode(bytes(s_set[name][0], 'utf-8')).decode()    
+    bd = base64.b64encode(bytes(s_set[name][1], 'utf-8')).decode()
+    login = base64.b64encode(bytes(s_set[name][2], 'utf-8')).decode()
+    password = base64.b64encode(bytes(s_set[name][3], 'utf-8')).decode()
+    is_remembered = base64.b64encode(bytes('true', 'utf-8')).decode()
+    
+    rest_string_tag = 'use_program="" pin_program="" link_program="" program="" path="" dir="" info=""'
+    set_string = f'item label="{label}" server="{server}" database="{bd}" login="{login}" password="{password}" remember="{is_remembered}" {rest_string_tag}'
+    
+    #with open(filename, 'r') as xml_file:
+    #    soup = BeautifulSoup(xml_file, 'xml')
+    #    new_element = soup.new_tag(set_string)
+    #    print(new_element)
+    #    soup.settings.items.append(new_element)
+    
+    #with open(filename) as f:
+    #    tree = BeautifulSoup(f.read(), "xml")
+    #    tree.settings.items.append(set_string)
+    
+    #fd = open(filename, 'w')
+    #fd.write(soup.prettify())
+    
+    return set_string
+

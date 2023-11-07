@@ -8,7 +8,7 @@ from os import path
 import pandas as pd
 import shutil
 
-from rw_xml import import_xml_settings
+from rw_xml import import_xml_settings, export_xml_setting
 from data4gis import binding_debts
 
 #-----finding the path of the current script-file------------
@@ -147,6 +147,7 @@ def save_set():
     Returns:
     '''
     global settings_set
+    global setting_filename
     
     list_connect_params = [txt_lable.get(), txt_srv.get(),
                            txt_bd.get(), txt_usr.get(), txt_pass.get()]
@@ -158,11 +159,8 @@ def save_set():
     settings_set[list_connect_params[0]] = [list_connect_params[1], list_connect_params[2], 
                                        list_connect_params[3], list_connect_params[4]]
     
-    # сюда нужно добавить вызов функции, которая допишет файл settings если он есть
-    # либо создаст и добавить туда введнную настройку
-    # назначение текущему набору настроек для соединения
-    
-    #pass
+    # сохраняем добавленный набор для коннекта в xml-файл
+    export_xml_setting(setting_filename, settings_set, list_connect_params[0])
 
 
 def select_jur(event):

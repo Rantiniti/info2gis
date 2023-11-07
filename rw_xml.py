@@ -57,18 +57,15 @@ def export_xml_setting(filename, s_set, name):
     rest_string_tag = 'use_program="" pin_program="" link_program="" program="" path="" dir="" info=""'
     set_string = f'item label="{label}" server="{server}" database="{bd}" login="{login}" password="{password}" remember="{is_remembered}" {rest_string_tag}'
     
-    #with open(filename, 'r') as xml_file:
-    #    soup = BeautifulSoup(xml_file, 'xml')
-    #    new_element = soup.new_tag(set_string)
-    #    print(new_element)
-    #    soup.settings.items.append(new_element)
+    fd = open(filename, 'r') 
+    xml_file = fd.read() 
+    soup = BeautifulSoup(xml_file, features="xml") 
     
-    #with open(filename) as f:
-    #    tree = BeautifulSoup(f.read(), "xml")
-    #    tree.settings.items.append(set_string)
+    for item in soup.select('items'):
+        finaltag=item.select('item')[-1]
+        new_tag = soup.new_tag(set_string)
+        finaltag.insert_after(new_tag)
     
-    #fd = open(filename, 'w')
-    #fd.write(soup.prettify())
-    
-    return set_string
+    with open(filename, 'w') as f:
+        f.write(soup.prettify())
 

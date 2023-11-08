@@ -31,7 +31,7 @@ def import_xml_settings(filename):
     
     return settings_set
 
-# добавить функцию добавление тэга в xml-файл
+# функция добавления тэга для коннекта в xml-файл
 
 def export_xml_setting(filename, s_set, name):
     '''
@@ -69,3 +69,97 @@ def export_xml_setting(filename, s_set, name):
     with open(filename, 'w') as f:
         f.write(soup.prettify())
 
+# функция создания xml-файла для коннектовых настроек
+
+def creating_xml_setting(filename, s_set, name):
+    '''
+    Функция создает xml-файл для данных конект-строк.
+    Цель - создание файла с данными, введенными вручную,
+    по подключению к базе.
+    Arguments:
+        filename [str]: адрес файла с данными подключений
+        s_set [dict]: данные для коннекта с БД
+        name [str]: название набора данных для коннекта
+    Returns:
+        None
+    '''
+    soup = BeautifulSoup(features='xml')
+    soup.append(soup.new_tag("settings"))
+    soup.settings.append(soup.new_tag("items"))
+    soup.settings.items.append(soup.new_tag('item'))
+    item_tag = soup.settings.items.select('item')[-1]
+    item_tag['label'] = base64.b64encode(bytes(name, 'utf-8')).decode()
+    item_tag['server'] = base64.b64encode(bytes(s_set[name][0], 'utf-8')).decode() 
+    item_tag['bd'] = base64.b64encode(bytes(s_set[name][1], 'utf-8')).decode()
+    item_tag['login'] = base64.b64encode(bytes(s_set[name][2], 'utf-8')).decode()
+    item_tag['password'] = base64.b64encode(bytes(s_set[name][3], 'utf-8')).decode()
+    item_tag['is_remembered'] = base64.b64encode(bytes('true', 'utf-8')).decode()
+    item_tag['use_program'] = ""
+    item_tag['pin_program'] = ""
+    item_tag['link_program'] = ""
+    item_tag['program'] = ""
+    item_tag['path'] = ""
+    item_tag['dir'] = ""
+    item_tag['info'] = ""
+    
+    
+    with open(filename, 'w') as f:
+        f.write(soup.prettify())
+        #print(f)
+    
+# функция проверки на нахождения настроек в xml-файле
+    
+def is_empty_settings(filename):
+    '''
+    Функция проверяет есть ли данные хотябы для одной коннект-строки.
+    Arguments:
+        filename [str]: адрес файла с данными подключений
+    Returns:
+        bool: true если настройки отсутствуют
+    '''
+    fd = open(filename, 'r') 
+    xml_file = fd.read() 
+    soup = BeautifulSoup(xml_file, features="xml") 
+    
+    if(not soup.select('item')):
+        return True
+    else:
+        return False
+    
+    
+# функция заполнения данными словаря создаваемого файла xml
+def stuff_settings_xml(filename, s_set):
+    '''
+    Функция создает xml-файл для данных конект-строк.
+    Цель - создание файла и заполнение данными настроек 
+        из словаря
+    Arguments:
+        filename [str]: адрес файла с данными подключений
+        s_set [dict]: данные для коннекта с БД
+    Returns:
+        None
+    '''
+    soup = BeautifulSoup(features='xml')
+    soup.append(soup.new_tag("settings"))
+    soup.settings.append(soup.new_tag("items"))
+    for item in s_set.keys():
+        soup.settings.items.append(soup.new_tag('item'))
+        item_tag = soup.settings.items.select('item')[-1]
+        item_tag['label'] = base64.b64encode(bytes(item, 'utf-8')).decode()
+        item_tag['server'] = base64.b64encode(bytes(s_set[item][0], 'utf-8')).decode() 
+        item_tag['bd'] = base64.b64encode(bytes(s_set[item][1], 'utf-8')).decode()
+        item_tag['login'] = base64.b64encode(bytes(s_set[item][2], 'utf-8')).decode()
+        item_tag['password'] = base64.b64encode(bytes(s_set[item][3], 'utf-8')).decode()
+        item_tag['is_remembered'] = base64.b64encode(bytes('true', 'utf-8')).decode()
+        item_tag['use_program'] = ""
+        item_tag['pin_program'] = ""
+        item_tag['link_program'] = ""
+        item_tag['program'] = ""
+        item_tag['path'] = ""
+        item_tag['dir'] = ""
+        item_tag['info'] = ""
+    
+    with open(filename, 'w') as f:
+        f.write(soup.prettify())
+        
+    

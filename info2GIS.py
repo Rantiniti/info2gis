@@ -8,7 +8,8 @@ from os import path
 import pandas as pd
 import shutil
 
-from rw_xml import import_xml_settings, export_xml_setting
+from rw_xml import import_xml_settings, export_xml_setting, creating_xml_setting
+from rw_xml import stuff_settings_xml
 from data4gis import binding_debts
 
 #-----finding the path of the current script-file------------
@@ -31,7 +32,7 @@ def get_settings_set(filename):
         [Dictionary]: результирующий словарь
     '''
     global settings_set
-    settings_set = import_xml_settings(filename)
+    settings_set.update(import_xml_settings(filename))
     
 def get_current_bd_set(jur_label):
     '''
@@ -118,6 +119,11 @@ def import_params():
     file_parameters = file
     # get global settings_set
     get_settings_set(file_parameters)
+    if not path.exists(setting_filename):
+        # слить setting_set в файл настроек
+        # stuff_settings_xml
+        stuff_settings_xml(setting_filename, settings_set)
+        pass
     combo_MC.config(values=list(settings_set.keys())[::-1])
     lbl_setting_info.config(text="Выберите организацию", fg="blue")
 
@@ -159,8 +165,15 @@ def save_set():
     settings_set[list_connect_params[0]] = [list_connect_params[1], list_connect_params[2], 
                                        list_connect_params[3], list_connect_params[4]]
     
-    # сохраняем добавленный набор для коннекта в xml-файл
-    export_xml_setting(setting_filename, settings_set, list_connect_params[0])
+    if path.exists(setting_filename):
+        # сохраняем добавленный набор для коннекта в xml-файл
+        export_xml_setting(setting_filename, settings_set, list_connect_params[0])
+    else:
+        # создаем xml-файл и добавляем тег с настройками для соединения к бд
+        creating_xml_setting(setting_filename, settings_set, list_connect_params[0])
+        
+    combo_MC.config(values=list(settings_set.keys())[::-1])
+    lbl_setting_info.config(text="Выберите организацию", fg="blue")
 
 
 def select_jur(event):
@@ -334,7 +347,7 @@ else:
 if no_params():
     lbl_info_debts.config(text="Настройте соединение с БД организации \n затем выберите нужную организацию")
 #--------------------------------------------------------------
-# если есть файл с настройками в рабочем каталоге, чиаем и привязываем данные
+# если есть файл с настройками в рабочем каталоге, читаем и привязываем данные
 if path.exists(setting_filename):
         get_settings_set(setting_filename)
         combo_MC.config(values=list(settings_set.keys())[::-1])
